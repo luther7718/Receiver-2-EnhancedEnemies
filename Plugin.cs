@@ -324,8 +324,14 @@ public class Plugin : BaseUnityPlugin
             new ConfigDescription("Enables security cameras to activate through other security cameras (they still need their own camera though)")
         );
 /////////////////////////////////////////////////////////////////////////////////////////////////
+        GreenDemonSpawner.demonEnabled = Config.Bind(
+            new ConfigDefinition("Green Demon Mode", "Green Demon enabled"),
+            false,
+            new ConfigDescription("Try to rank up while evading a slow but invincible shock drone that can phase through walls")
+        );
+/////////////////////////////////////////////////////////////////////////////////////////////////
         EnableClassic = Config.Bind(
-            new ConfigDefinition("Classic Mode", "Enabled"),
+            new ConfigDefinition("Classic Mode", "Enhanced Enemies in Classic"),
             false,
             new ConfigDescription("Spawn enhanced enemies in the Receiver 1 arcade cabinet")
         );
@@ -342,5 +348,6 @@ public class Plugin : BaseUnityPlugin
         _harmony.PatchAll(typeof(SleepyDrones));
         _harmony.PatchAll(typeof(SleepySecurityCameras));
         _harmony.PatchAll(typeof(SecurityCameraLinkedEnemies));
+        _harmony.PatchAll(typeof(GreenDemonSpawner));
     }
 }

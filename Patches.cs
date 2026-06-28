@@ -1,10 +1,10 @@
+using BepInEx.Configuration;
 using HarmonyLib;
 using Receiver2;
-using UnityEngine;
 using System.Collections.Generic;
-using BepInEx.Configuration;
 using System.Reflection;
 using System.Reflection.Emit;
+using UnityEngine;
 using VLB;
 
 namespace EnhancedEnemies.Patches
@@ -58,7 +58,7 @@ namespace EnhancedEnemies.Patches
 
             int shotgunWeight = ShotgunTurrets.enabled.Value ? ShotgunTurrets.weight.Value : 0;
             int lancerWeight = LancerTurrets.enabled.Value ? LancerTurrets.weight.Value : 0;
-            int random = (int) (Random(TurretSeed(__instance), "Turret Main") * (weight.Value + shotgunWeight + lancerWeight));
+            int random = (int)(Random(TurretSeed(__instance), "Turret Main") * (weight.Value + shotgunWeight + lancerWeight));
             //Plugin.Logger.LogInfo(random);
 
             if (random < shotgunWeight)
@@ -93,10 +93,10 @@ namespace EnhancedEnemies.Patches
         }
 
         internal static void VanillaExecuteTrajectory(BulletTrajectory trajectory)
-		{
-			ReceiverEvents.TriggerEvent(ReceiverEventTypeBulletTrajectory.Created, trajectory);
-			BulletTrajectoryManager.active_trajectories.Add(trajectory);
-		}
+        {
+            ReceiverEvents.TriggerEvent(ReceiverEventTypeBulletTrajectory.Created, trajectory);
+            BulletTrajectoryManager.active_trajectories.Add(trajectory);
+        }
 
         [HarmonyPatch(typeof(TurretScript), "UpdateLight")]
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
@@ -128,7 +128,7 @@ namespace EnhancedEnemies.Patches
                     new CodeInstruction(OpCodes.Brfalse_S, isRegularTurret),
                     new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(LancerTurrets), nameof(LancerTurrets.lightColor))),
                     new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(ConfigEntry<Color>), "get_Value")),
-                    
+
                     new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(Light), "set_color", [typeof(Color)])).WithLabels([setColor]),
                     new CodeInstruction(OpCodes.Br_S, end),
 
@@ -171,8 +171,8 @@ namespace EnhancedEnemies.Patches
                 density = 11340f
             };
             float num = cs.diameter * 0.5f;
-			float num2 = cs.mass / 1000f / cs.density;
-			cs.cylinder_length = num2 / (3.1415927f * num * num);
+            float num2 = cs.mass / 1000f / cs.density;
+            cs.cylinder_length = num2 / (3.1415927f * num * num);
             return cs;
         }
 
@@ -215,13 +215,13 @@ namespace EnhancedEnemies.Patches
         [HarmonyPatch(typeof(TurretScript), "UpdateCameraAlive")]
         static void AlertDelayPost(TurretScript __instance, ref float ___alert_delay, AIState __state)
         {
-			if (shotgunSet.Contains(__instance) && __instance.CanSeePlayer())
-			{
-				if (__state == AIState.Idle)
-				{
-					___alert_delay *= alertDelay.Value / 0.6f;
-				}
-			}
+            if (shotgunSet.Contains(__instance) && __instance.CanSeePlayer())
+            {
+                if (__state == AIState.Idle)
+                {
+                    ___alert_delay *= alertDelay.Value / 0.6f;
+                }
+            }
         }
 
         [HarmonyPrefix]
@@ -229,8 +229,8 @@ namespace EnhancedEnemies.Patches
         static bool TurretShotgunShot(BulletTrajectory trajectory)
         {
             if (shotgunSet.Contains(trajectory.bullet_source.GetComponent<TurretScript>()))// &&
-                //(trajectory.bullet_source_entity_type == ReceiverEntityType.Turret ||
-                //trajectory.bullet_source_entity_type == ReceiverEntityType.CeilingTurret))
+                                                                                           //(trajectory.bullet_source_entity_type == ReceiverEntityType.Turret ||
+                                                                                           //trajectory.bullet_source_entity_type == ReceiverEntityType.CeilingTurret))
             {
                 Vector3 start = trajectory.movement_events[0].start_pos;
                 Vector3 direction = trajectory.movement_events[0].end_pos - start;
@@ -284,8 +284,8 @@ namespace EnhancedEnemies.Patches
                 density = 11340f * 1.5f
             };
             float num = cs.diameter * 0.5f;
-			float num2 = cs.mass / 1000f / cs.density;
-			cs.cylinder_length = num2 / (3.1415927f * num * num);
+            float num2 = cs.mass / 1000f / cs.density;
+            cs.cylinder_length = num2 / (3.1415927f * num * num);
             return cs;
         }
 
@@ -311,20 +311,20 @@ namespace EnhancedEnemies.Patches
         {
             __state = ___ai_state;
         }
-        
+
         [HarmonyPostfix]
         [HarmonyPatch(typeof(TurretScript), "UpdateCameraAlive")]
         static void AlertDelayPost(TurretScript __instance, ref float ___alert_delay, AIState __state)
         {
-			if (lancerSet.Contains(__instance) && __instance.CanSeePlayer())
-			{
-				if (__state == AIState.Idle)
-				{
-					___alert_delay *= alertDelay.Value / 0.6f;
-				}
-			}
+            if (lancerSet.Contains(__instance) && __instance.CanSeePlayer())
+            {
+                if (__state == AIState.Idle)
+                {
+                    ___alert_delay *= alertDelay.Value / 0.6f;
+                }
+            }
         }
-        
+
         /*public static int GetInstructionSize(OpCode opcode)
         {
             // 1. Calculate OpCode size
@@ -389,7 +389,7 @@ namespace EnhancedEnemies.Patches
             {
                 Label endIf = il.DefineLabel();
                 //IL_017C
-                if (codes[i+2].opcode == OpCodes.Ldfld && ((FieldInfo)codes[i+2].operand) == AccessTools.Field(typeof(BallisticProperties), nameof(BallisticProperties.hollow)))
+                if (codes[i + 2].opcode == OpCodes.Ldfld && ((FieldInfo)codes[i + 2].operand) == AccessTools.Field(typeof(BallisticProperties), nameof(BallisticProperties.hollow)))
                 {
                     yield return new CodeInstruction(OpCodes.Ldarg_1);
                     yield return new CodeInstruction(OpCodes.Box, typeof(CartridgeSpec));
@@ -439,7 +439,7 @@ namespace EnhancedEnemies.Patches
             {
                 Label endIf = il.DefineLabel();
                 //IL_038E
-                if (codes[i+1].opcode == OpCodes.Ldfld && ((FieldInfo)codes[i+1].operand) == AccessTools.Field(typeof(BallisticProperties), nameof(BallisticProperties.hollow)))
+                if (codes[i + 1].opcode == OpCodes.Ldfld && ((FieldInfo)codes[i + 1].operand) == AccessTools.Field(typeof(BallisticProperties), nameof(BallisticProperties.hollow)))
                 {
                     yield return new CodeInstruction(OpCodes.Ldarg_1);
                     yield return new CodeInstruction(OpCodes.Box, typeof(CartridgeSpec));
@@ -460,7 +460,7 @@ namespace EnhancedEnemies.Patches
                 Label endIf = il.DefineLabel();
                 //IL_06ED
                 if (codes[i].opcode == OpCodes.Ldloc_1
-                && codes[i+1].opcode == OpCodes.Ldloc_S && ((LocalBuilder)codes[i+1].operand).LocalIndex == 35)
+                && codes[i + 1].opcode == OpCodes.Ldloc_S && ((LocalBuilder)codes[i + 1].operand).LocalIndex == 35)
                 {
                     yield return codes[i++];
                     yield return new CodeInstruction(OpCodes.Ldarg_1);
@@ -481,7 +481,7 @@ namespace EnhancedEnemies.Patches
             {
                 //Label endIf = il.DefineLabel();
                 //IL_082C
-                if (codes[i+1].opcode == OpCodes.Stloc_S && ((LocalBuilder)codes[i+1].operand).LocalIndex == 39)
+                if (codes[i + 1].opcode == OpCodes.Stloc_S && ((LocalBuilder)codes[i + 1].operand).LocalIndex == 39)
                 {
                     yield return codes[i++].WithLabels([bypassRicochet]);
                     yield return codes[i++];
@@ -511,7 +511,7 @@ namespace EnhancedEnemies.Patches
             for (; i < codes.Count; i++)
             {
                 //IL_0E38
-                if (codes[i+4].opcode == OpCodes.Ldloc_S && ((LocalBuilder)codes[i+4].operand).LocalIndex == 56)
+                if (codes[i + 4].opcode == OpCodes.Ldloc_S && ((LocalBuilder)codes[i + 4].operand).LocalIndex == 56)
                 {
                     yield return new CodeInstruction(OpCodes.Ldarg_1);
                     yield return new CodeInstruction(OpCodes.Box, typeof(CartridgeSpec));
@@ -554,9 +554,9 @@ namespace EnhancedEnemies.Patches
                     new CodeInstruction(OpCodes.Brfalse_S, isRegularTurret),
                     new CodeInstruction(OpCodes.Pop),
                     new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(LancerTurrets), nameof(LancerTurrets._50AP))).WithLabels([setCartridge])
-                    /*new CodeInstruction(OpCodes.Stsfld, AccessTools.Field(typeof(TurretScript), "cartridge_spec"))*/
-                    /*new CodeInstruction(OpCodes.Br_S, endif),
-                    new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(TurretScript), "cartridge_spec")).WithLabels([isRegularTurret])*/
+                /*new CodeInstruction(OpCodes.Stsfld, AccessTools.Field(typeof(TurretScript), "cartridge_spec"))*/
+                /*new CodeInstruction(OpCodes.Br_S, endif),
+                new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(TurretScript), "cartridge_spec")).WithLabels([isRegularTurret])*/
                 )
                 .AddLabels([isRegularTurret])
                 //.Advance(1)
@@ -630,7 +630,7 @@ namespace EnhancedEnemies.Patches
 
                     //      skip target_pos assignment
                     new CodeInstruction(OpCodes.Br_S, cannotSeeThisFrame)
-                    
+
                 )
                 .AddLabels([vanillaTargeting])
                 .MatchForward(false, new CodeMatch(OpCodes.Stfld, AccessTools.Field(typeof(RobotScript), "target_pos")))
@@ -701,7 +701,7 @@ namespace EnhancedEnemies.Patches
                 .AddLabels([endif])
                 .MatchForward(false, new CodeMatch(OpCodes.Ret))
                 .AddLabels([noFire])
-                
+
                 .Instructions();
 
             /*int offset = 0;
@@ -775,7 +775,7 @@ namespace EnhancedEnemies.Patches
                     ___ai_state = AIState.Idle;
                     __instance.StartCoroutine(DelayStartAsleep(__instance));
                 }
-            
+
                 r = random.NextDouble();
                 if (r < sleepyChance.Value)
                 {
@@ -817,27 +817,27 @@ namespace EnhancedEnemies.Patches
                 standby_wakeup_delay = ___standby_wakeup_delay
             };
         }
-        
+
         [HarmonyPostfix]
         [HarmonyPatch(typeof(TurretScript), "UpdateSensor")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Method Declaration", "Harmony003:Harmony non-ref patch parameters modified", Justification = "im not modifying it dough")]
         static void OverrideWakeupDelayPost(TurretScript __instance, ref float ___standby_wakeup_delay, OverrideWakeupState __state)
         {
             if (__state.ai_state == AIState.Standby)
-			{
-				if (!__instance.motion_sensor_alive || __instance.powered_off)
-				{
-					return;
-				}
-				if (__instance.CanSeePlayer())
-				{
+            {
+                if (!__instance.motion_sensor_alive || __instance.powered_off)
+                {
+                    return;
+                }
+                if (__instance.CanSeePlayer())
+                {
                     ___standby_wakeup_delay = __state.standby_wakeup_delay + wakeupDelay.Value;
                     if (sleepTimers.ContainsKey(__instance))
                     {
                         sleepTimers[__instance] = sleepTimeout.Value + ___standby_wakeup_delay;
                     }
-				}
-			}
+                }
+            }
         }
     }
 
@@ -855,7 +855,7 @@ namespace EnhancedEnemies.Patches
         //internal static object cached_raycasts_access = AccessTools.Method(typeof(AccessTools), nameof(AccessTools.FieldRefAccess), [typeof(string)], [typeof(SensorPart),cr])/*.MakeGenericMethod(typeof(SensorPart),cr)*/.Invoke(null, ["cached_raycasts"]);
         internal static AccessTools.FieldRef<ShockDrone, ShockDroneState> state_access = AccessTools.FieldRefAccess<ShockDrone, ShockDroneState>("state");
         internal static AccessTools.FieldRef<MotorPart, FMOD.Studio.EventInstance> event_instance_motor_access = AccessTools.FieldRefAccess<MotorPart, FMOD.Studio.EventInstance>("event_instance_motor");
-        internal static MethodInfo throttle_set_access = AccessTools.PropertySetter(typeof(MotorPart),nameof(MotorPart.Throttle));
+        internal static MethodInfo throttle_set_access = AccessTools.PropertySetter(typeof(MotorPart), nameof(MotorPart.Throttle));
         internal static ConfigEntry<bool> startAsleepEnabled;
         internal static ConfigEntry<float> startAsleepChance;
         internal static ConfigEntry<float> wakeupDelay;
@@ -950,7 +950,7 @@ namespace EnhancedEnemies.Patches
         {
             // wakeup from being kicked
             if (__instance.camera_part.Alive &&
-                ((__instance.motor_part.Velocity.magnitude > 3.5f && 
+                ((__instance.motor_part.Velocity.magnitude > 3.5f &&
                     Vector3.Angle(__instance.motor_part.Velocity, __instance.motor_part.TargetPosition - __instance.motor_part.transform.position) > 45f) ||
                 (__instance.motor_part.Throttle < .1f) &&
                     __instance.motor_part.Velocity.magnitude > .8f &&
@@ -1134,7 +1134,7 @@ namespace EnhancedEnemies.Patches
                     if (Vector3.Distance(drone.transform.position, __instance.TargetPosition) < .1f &&
                         __instance.Velocity.magnitude < .5f)
                     {
-                        throttle_set_access.Invoke(__instance,[0]);
+                        throttle_set_access.Invoke(__instance, [0]);
                         return false;
                     }
                 }
@@ -1164,7 +1164,7 @@ namespace EnhancedEnemies.Patches
     {
         private static Dictionary<SecurityCamera, float> wakeUpTimers = new Dictionary<SecurityCamera, float>();
         private static Dictionary<SecurityCamera, float> sleepTimers = new Dictionary<SecurityCamera, float>();
-        internal static MethodInfo CanSeePlayerAccess = AccessTools.PropertyGetter(typeof(SecurityCamera),"CanSeePlayer");
+        internal static MethodInfo CanSeePlayerAccess = AccessTools.PropertyGetter(typeof(SecurityCamera), "CanSeePlayer");
         internal static ConfigEntry<bool> startAsleepEnabled;
         internal static ConfigEntry<float> startAsleepChance;
         internal static ConfigEntry<float> wakeupDelay;
@@ -1185,7 +1185,7 @@ namespace EnhancedEnemies.Patches
 
             if (startAsleepEnabled.Value && UnityEngine.Random.value < startAsleepChance.Value)
             {
-			    __instance.light_part.SetTargetLightMode(LightPart.LightMode.Standby, false);
+                __instance.light_part.SetTargetLightMode(LightPart.LightMode.Standby, false);
                 wakeUpTimers[__instance] = firstWakeupExtraDelay.Value;
                 if (sleepyEnabled.Value && UnityEngine.Random.value < sleepyChance.Value)
                 {
@@ -1316,7 +1316,7 @@ namespace EnhancedEnemies.Patches
 
         private static FieldInfo camera_part_drone_access = AccessTools.Field(typeof(ShockDrone), "camera_part");
         private static FieldInfo camera_part_camera_access = AccessTools.Field(typeof(SecurityCamera), "camera_part");
-        private static MethodInfo get_componenet_camera = AccessTools.Method(typeof(GameObject),nameof(GameObject.GetComponent),generics: [typeof(SecurityCamera)]);
+        private static MethodInfo get_componenet_camera = AccessTools.Method(typeof(GameObject), nameof(GameObject.GetComponent), generics: [typeof(SecurityCamera)]);
         private static FieldInfo enemy_access = AccessTools.Field(typeof(ActiveEnemy), "enemy");
 
         [HarmonyPrefix]
@@ -1374,7 +1374,7 @@ namespace EnhancedEnemies.Patches
                 ___alertable_enemies = new List<IAlertable>();
                 ___alertable_enemies.AddRange(global::UnityEngine.Object.FindObjectsOfType<CameraPart>());
                 ___alertable_enemies.AddRange(global::UnityEngine.Object.FindObjectsOfType<TurretScript>());
-                IL_0136:
+            IL_0136:
                 foreach (IAlertable alertable3 in ___alertable_enemies)
                 {
                     alertable3.Alert(__instance.camera_part.Vision, LocalAimHandler.player_instance);
@@ -1439,12 +1439,12 @@ namespace EnhancedEnemies.Patches
         static void ReversePatch_UpdateCameraAlive(object instance)
         {
             //throw new System.NotImplementedException("method TurretScript.UpdateCameraAlive was not reverse patched");
-            #pragma warning disable CS8321 // Local function is declared but never used - reverse patch transpile
+#pragma warning disable CS8321 // Local function is declared but never used - reverse patch transpile
             IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
             {
                 return LancerTurrets_LeadAfterVisionLoss.Transpiler(instructions, il);
             }
-            #pragma warning restore CS8321 // Local function is declared but never used
+#pragma warning restore CS8321 // Local function is declared but never used
         }
 
         [HarmonyPrefix]
@@ -1507,6 +1507,33 @@ namespace EnhancedEnemies.Patches
             {
                 return true;
             }
+        }
+    }
+    [HarmonyPatch]
+    public static class GreenDemonSpawner
+    {
+        internal static ConfigEntry<bool> demonEnabled;
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(ReceiverCoreScript), "SpawnPlayer")]
+        static void SpawnPlayerPostfix(Vector3 position)
+        {
+            if (!demonEnabled.Value) return;
+
+            ReceiverCoreScript rcsInstance = ReceiverCoreScript.Instance();
+            if (rcsInstance == null) return;
+
+            rcsInstance.StartCoroutine(SpawnDemonAfterDelay(position));
+        }
+
+        private static System.Collections.IEnumerator SpawnDemonAfterDelay(Vector3 spawnPos)
+        {
+            yield return new WaitForSeconds(5f);
+
+            RuntimeTileLevelGenerator rtlgInstance = RuntimeTileLevelGenerator.instance;
+            if (rtlgInstance == null) yield break;
+
+            rtlgInstance.CreateGreenDemon(spawnPos);
         }
     }
 }
