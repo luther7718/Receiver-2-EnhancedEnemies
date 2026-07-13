@@ -28,6 +28,9 @@
   </ItemGroup>
 
   <ItemGroup>
+  <Reference Include="SimpleJSON">
+    <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Receiver 2\Receiver2_Data\Managed\SimpleJSON.dll</HintPath>
+  </Reference>
   <Reference Include="Wolfire.Receiver2">
     <HintPath></HintPath>
   </Reference>
