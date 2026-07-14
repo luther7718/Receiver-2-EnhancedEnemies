@@ -742,11 +742,10 @@ namespace EnhancedEnemies.Patches
         [HarmonyPostfix, HarmonyPatch(typeof(ShockDrone), "Start")]
         static void OnSpawn(ShockDrone __instance)
         {
-          /*
-             if ((ReceiverCoreScript.Instance().game_mode.GetGameMode() != GameMode.RankingCampaign))
-                && !Plugin.EnableClassic.Value)
-                return;
-          */
+            if ((ReceiverCoreScript.Instance().game_mode.GetGameMode() != GameMode.RankingCampaign)
+               && !Plugin.EnableClassic.Value)
+               return;
+         
 
             var persist = __instance.GetComponent<Persist>();
             if (persist == null)
@@ -1709,29 +1708,32 @@ namespace EnhancedEnemies.Patches
         }
     }
     [HarmonyPatch]
-    public static class GreenDemonSpawner
+    public static class GreenDemon
     {
-        internal static ConfigEntry<bool> demonEnabled;
+        internal static ConfigEntry<bool> enabled;
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(ReceiverCoreScript), "SpawnPlayer")]
         static void SpawnPlayerPostfix(Vector3 position)
         {
-            if (!demonEnabled.Value) return;
+            if (!enabled.Value) return;
 
             ReceiverCoreScript rcsInstance = ReceiverCoreScript.Instance();
             if (rcsInstance == null) return;
+            if (rcsInstance.game_mode.GetGameMode() != GameMode.RankingCampaign) return;
+            //Disabling this altogether outside of RankingCampaign.
+            //I plan to create a separate patch later to enable this in Classic.
 
             rcsInstance.StartCoroutine(SpawnDemonAfterDelay(position));
         }
 
         private static System.Collections.IEnumerator SpawnDemonAfterDelay(Vector3 spawnPos)
-        {
+        {   //I couldn't figure out how to load the actual Green Demon modifier...
             yield return new WaitForSeconds(5f);
 
             RuntimeTileLevelGenerator rtlgInstance = RuntimeTileLevelGenerator.instance;
             if (rtlgInstance == null) yield break;
-
+            //so I cheat and just spawn the enemy itself after a delay.
             rtlgInstance.CreateGreenDemon(spawnPos);
         }
     }
