@@ -1,3 +1,8 @@
+### 1.2.0
+- Green Demon
+- Grenade Drones
+- Plugin now no longer affects Classic mode by default (with option to enable)
+
 ### 1.1.5
 - Turrets will use default `IsNeutralized` and `IsIncapacitated` if turret security camera link is disabled (meaning turrets will drop ammo after its camera is shot out if disabled)
 
