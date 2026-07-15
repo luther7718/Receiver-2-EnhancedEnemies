@@ -71,12 +71,12 @@ public class Plugin : BaseUnityPlugin
         );
         ShotgunTurrets.lightColor = Config.Bind(
             new ConfigDefinition("Shotgun Turrets", "Camera light color"),
-            new UnityEngine.Color(1f,0f,0f),
+            new UnityEngine.Color(1f,0f,1f),    //Changed this to magenta so it's not the same color as the alert state
             new ConfigDescription("Determines the color of the camera lights of shotgun turrets. Vanilla color is 0000FFFF")
         );
         ShotgunTurrets.componentColor = Config.Bind(
             new ConfigDefinition("Shotgun Turrets", "Component color"),
-            new UnityEngine.Color(1f,0.4f,0.4f),
+            new UnityEngine.Color(0.4f, 0f,0.4f),
             new ConfigDescription("Determines the color of some componenets of lancer turrets. For vanilla color use FFFFFFFF")
         );
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -146,8 +146,8 @@ public class Plugin : BaseUnityPlugin
 
         GrenadeDrones.lightColor = Config.Bind(
             new ConfigDefinition("Grenade Drones", "Light color"),
-            new UnityEngine.Color(1f, 0f, 0f),
-            new ConfigDescription("Colour of the light on grenade drones.")
+            new UnityEngine.Color(1f, 0f, 1f),  //This is magenta because red is already taken by alert state
+            new ConfigDescription("Color of the light on grenade drones.")
         );
 /////////////////////////////////////////////////////////////////////////////////////////////////
         SleepyTurrets.overrideLevelStartAsleepChance = Config.Bind(
@@ -201,7 +201,12 @@ public class Plugin : BaseUnityPlugin
             new ConfigDefinition("Sleeping Drones", "Enabled"),
             true,
             new ConfigDescription("Enables drones to start asleep")
-        );
+        );/*
+        SleepyDrones.inheritLevelStartAsleepChance = Config.Bind(
+            new ConfigDefinition("Sleeping Drones", "Inherit level start asleep chance from turrets"),
+            true,
+            new ConfigDescription("Ignore drones' \"Start asleep chance\" and use the level start asleep chance for turrets instead")
+        );*/
         SleepyDrones.startAsleepChance = Config.Bind(
             new ConfigDefinition("Sleeping Drones", "Start asleep chance"),
             0.25f,
@@ -278,7 +283,12 @@ public class Plugin : BaseUnityPlugin
             new ConfigDefinition("Sleeping Security Cameras", "Enabled"),
             true,
             new ConfigDescription("Enables security cameras to start asleep")
-        );
+        );/*
+        SleepySecurityCameras.inheritLevelStartAsleepChance = Config.Bind(
+            new ConfigDefinition("Sleeping Security Cameras", "Inherit level start asleep chance from turrets"),
+            true,
+            new ConfigDescription("Ignore cameras' \"Start asleep chance\" and use the level start asleep chance for turrets instead")
+        );*/
         SleepySecurityCameras.startAsleepChance = Config.Bind(
             new ConfigDefinition("Sleeping Security Cameras", "Start asleep chance"),
             0.25f,
