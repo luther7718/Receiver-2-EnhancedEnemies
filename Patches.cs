@@ -812,11 +812,10 @@ namespace EnhancedEnemies.Patches
         [HarmonyPostfix, HarmonyPatch(typeof(ShockDrone), "Start")]
         static void OnSpawn(ShockDrone __instance)
         {
-          /*
-             if ((ReceiverCoreScript.Instance().game_mode.GetGameMode() != GameMode.RankingCampaign))
-                && !Plugin.EnableClassic.Value)
-                return;
-          */
+            if ((ReceiverCoreScript.Instance().game_mode.GetGameMode() != GameMode.RankingCampaign)
+               && !Plugin.EnableClassic.Value)
+               return;
+         
 
             var persist = __instance.GetComponent<Persist>();
             if (persist == null)
@@ -846,7 +845,7 @@ namespace EnhancedEnemies.Patches
         }
 
 
-        [HarmonyPrefix, HarmonyPatch(typeof(LightPart), "UpdateLights")]
+        [HarmonyPostfix, HarmonyPatch(typeof(LightPart), "UpdateLights")]
         static void Colorize(LightPart __instance) //mod light_color like in the shotgun/lancer code
         {
             var robotPart = lightPart(__instance);
@@ -887,7 +886,8 @@ namespace EnhancedEnemies.Patches
         //persists across room/checkpoint loads.
         private static HashSet<int> _explodedTasers = new HashSet<int>();
 
-        [HarmonyPostfix]    //Grenade drones self-destruct once close enough to the player
+
+        [HarmonyPostfix]    //Grenade drones self-destruct once close enough to the player...
         [HarmonyPatch(typeof(ShockDrone), "AttackingEnter")]
         static void OnSelfDestruct(ShockDrone __instance)
         {
@@ -898,7 +898,6 @@ namespace EnhancedEnemies.Patches
             if (taser == null) return;
 
             persist.selfDestruct = true;
-
             __instance.StartCoroutine(Fuse(__instance));
         }
         private static IEnumerator<WaitForSeconds> Fuse(ShockDrone drone)
@@ -907,15 +906,17 @@ namespace EnhancedEnemies.Patches
             TriggerGrenadeExplosion(drone, drone.taser_part);
         }
 
-        [HarmonyPostfix]    //Or if you shoot their taser (pretend it's a grenade)
+        [HarmonyPostfix]    //or if you shoot their taser (pretend it's a grenade)
         [HarmonyPatch(typeof(ShockDrone), "OnPartDestroyed")]
-        static void OnTaserDestroyed(ShockDrone __instance)
+        static void OnTaserDestroyed(ShockDrone __instance, ShootableQuery query, RobotPart part)
         {
             var persist = __instance.GetComponent<GrenadeDrones.Persist>();
             if (persist == null || !persist.isGrenade) return;
 
+            //Make sure the part shot (RobotPart part) is the taser (__instance.taser_part)
             var taser = __instance.taser_part;
-            if (taser == null) return;
+            if (taser == null || part.gameObject != taser.gameObject)
+                return;
 
             Plugin.Logger.LogDebug("Drone taser destroyed, firing...");
             TriggerGrenadeExplosion(__instance, taser);
@@ -1791,29 +1792,32 @@ namespace EnhancedEnemies.Patches
         }
     }
     [HarmonyPatch]
-    public static class GreenDemonSpawner
+    public static class GreenDemon
     {
-        internal static ConfigEntry<bool> demonEnabled;
+        internal static ConfigEntry<bool> enabled;
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(ReceiverCoreScript), "SpawnPlayer")]
         static void SpawnPlayerPostfix(Vector3 position)
         {
-            if (!demonEnabled.Value) return;
+            if (!enabled.Value) return;
 
             ReceiverCoreScript rcsInstance = ReceiverCoreScript.Instance();
             if (rcsInstance == null) return;
+            if (rcsInstance.game_mode.GetGameMode() != GameMode.RankingCampaign) return;
+            //Disabling this altogether outside of RankingCampaign.
+            //I plan to create a separate patch later to enable this in Classic.
 
             rcsInstance.StartCoroutine(SpawnDemonAfterDelay(position));
         }
 
         private static System.Collections.IEnumerator SpawnDemonAfterDelay(Vector3 spawnPos)
-        {
+        {   //I couldn't figure out how to load the actual Green Demon modifier...
             yield return new WaitForSeconds(5f);
 
             RuntimeTileLevelGenerator rtlgInstance = RuntimeTileLevelGenerator.instance;
             if (rtlgInstance == null) yield break;
-
+            //so I cheat and just spawn the enemy itself after a delay.
             rtlgInstance.CreateGreenDemon(spawnPos);
         }
     }
