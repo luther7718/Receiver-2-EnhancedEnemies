@@ -3,6 +3,7 @@ using HarmonyLib;
 using Receiver2;
 using SimpleJSON;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
@@ -828,9 +829,11 @@ namespace EnhancedEnemies.Patches
                     bool patrolling = __instance.follow_waypoints;
 
                     if (!patrolling) {grenadeChance = 0.33f;
-                        Plugin.Logger.LogDebug ("Not patrolling");}
+                        //Plugin.Logger.LogInfo ("Not patrolling");
+                        }
                     else {grenadeChance = 0.66f;
-                        Plugin.Logger.LogDebug ("I'm patrolling");}
+                        //Plugin.Logger.LogInfo ("I'm patrolling");
+                        }
                 }
                 else {grenadeChance = chance.Value;}
                 persist.isGrenade = UnityEngine.Random.value < grenadeChance;
@@ -918,7 +921,7 @@ namespace EnhancedEnemies.Patches
             if (taser == null || part.gameObject != taser.gameObject)
                 return;
 
-            Plugin.Logger.LogDebug("Drone taser destroyed, firing...");
+            //Plugin.Logger.LogInfo("Drone taser destroyed, firing...");
             TriggerGrenadeExplosion(__instance, taser);
         }
 
@@ -938,7 +941,7 @@ namespace EnhancedEnemies.Patches
             int id = taser.GetInstanceID();
             if (_explodedTasers.Contains(id))
             {
-                Plugin.Logger.LogDebug($"Taser {id} already exploded, skipping.");
+                //Plugin.Logger.LogInfo($"Taser {id} already exploded, skipping.");
                 return;
             }
             _explodedTasers.Add(id);
@@ -957,10 +960,10 @@ namespace EnhancedEnemies.Patches
             CartridgeSpec spec = new CartridgeSpec();
             spec.SetFromPreset(CartridgeSpec.Preset._22_LR);
 
-            //Spawn 24-32 pellets. This number is arbitrary, I couldn't find any actual ballistic info
+            //Spawn 32-48 pellets. This number is arbitrary, I couldn't find any actual ballistic info
             //on how many shrapnel fragments a grenade blast usually has. The old WW2 pineapple grenade
             //had 40 squares scored into it, but didn't actually fragment along its scores apparently.
-            int pelletCount = UnityEngine.Random.Range(24, 32);
+            int pelletCount = UnityEngine.Random.Range(32, 48);
             for (int i = 0; i < pelletCount; i++)
             {
                 Vector3 finalDir;
@@ -992,7 +995,7 @@ namespace EnhancedEnemies.Patches
                 BulletTrajectoryManager.ExecuteTrajectory(trajectory);
             }
 
-            Plugin.Logger.LogDebug("Boom, baby, BOOM!");
+            //Plugin.Logger.LogInfo("Boom, baby, BOOM!");
         }
     }
 
@@ -1139,6 +1142,7 @@ namespace EnhancedEnemies.Patches
         internal static AccessTools.FieldRef<MotorPart, FMOD.Studio.EventInstance> event_instance_motor_access = AccessTools.FieldRefAccess<MotorPart, FMOD.Studio.EventInstance>("event_instance_motor");
         internal static MethodInfo throttle_set_access = AccessTools.PropertySetter(typeof(MotorPart),nameof(MotorPart.Throttle));
         internal static ConfigEntry<bool> startAsleepEnabled;
+        internal static ConfigEntry<bool> inheritLevelStartAsleepChance;
         internal static ConfigEntry<float> startAsleepChance;
         internal static ConfigEntry<float> wakeupDelay;
         internal static ConfigEntry<float> firstWakeupExtraDelay;
@@ -1164,7 +1168,19 @@ namespace EnhancedEnemies.Patches
             cameraToDrone[__instance.camera_part] = __instance;
             oscillatorToDrone[__instance.oscillator_part] = __instance;
             motorToDrone[__instance.motor_part] = __instance;
-            if (startAsleepEnabled.Value && UnityEngine.Random.value < startAsleepChance.Value)
+
+            var standbyChance = startAsleepChance.Value;
+            if (inheritLevelStartAsleepChance.Value)
+            {   //Set the sleep rate to StandbyTurretRate from the worldgen config, or 0 if it doesn't exist.
+                var rtlgInstance = RuntimeTileLevelGenerator.instance; if (rtlgInstance != null){
+                var currentSegment = rtlgInstance.CurrentSegment; if (currentSegment != null){
+
+                if (currentSegment.float_properties.TryGetValue(FloatProperties.StandbyTurretRate, out var StandbyTurretRate))
+                { standbyChance = StandbyTurretRate.value; } } }
+                else standbyChance = 0f;
+            }
+
+            if (startAsleepEnabled.Value && UnityEngine.Random.value < standbyChance)
             {
                 wakeUpTimers[__instance] = firstWakeupExtraDelay.Value;
                 if (sleepyEnabled.Value && UnityEngine.Random.value < sleepyChance.Value)
@@ -1448,6 +1464,7 @@ namespace EnhancedEnemies.Patches
         private static Dictionary<SecurityCamera, float> sleepTimers = new Dictionary<SecurityCamera, float>();
         internal static MethodInfo CanSeePlayerAccess = AccessTools.PropertyGetter(typeof(SecurityCamera),"CanSeePlayer");
         internal static ConfigEntry<bool> startAsleepEnabled;
+        internal static ConfigEntry<bool> inheritLevelStartAsleepChance;
         internal static ConfigEntry<float> startAsleepChance;
         internal static ConfigEntry<float> wakeupDelay;
         internal static ConfigEntry<float> firstWakeupExtraDelay;
@@ -1465,7 +1482,22 @@ namespace EnhancedEnemies.Patches
                && !Plugin.EnableClassic.Value)
                 return;
 
-            if (startAsleepEnabled.Value && UnityEngine.Random.value < startAsleepChance.Value)
+            var standbyChance = startAsleepChance.Value;
+            if (inheritLevelStartAsleepChance.Value)
+            {   //Set the sleep rate to StandbyTurretRate from the worldgen config, or 0 if it doesn't exist.
+                var rtlgInstance = RuntimeTileLevelGenerator.instance; if (rtlgInstance != null)
+                {
+                    var currentSegment = rtlgInstance.CurrentSegment; if (currentSegment != null)
+                    {
+
+                        if (currentSegment.float_properties.TryGetValue(FloatProperties.StandbyTurretRate, out var StandbyTurretRate))
+                        { standbyChance = StandbyTurretRate.value; }
+                    }
+                }
+                else standbyChance = 0f;
+            }
+
+            if (startAsleepEnabled.Value && UnityEngine.Random.value < standbyChance)
             {
                 __instance.light_part.SetTargetLightMode(LightPart.LightMode.Standby, false);
                 wakeUpTimers[__instance] = firstWakeupExtraDelay.Value;
