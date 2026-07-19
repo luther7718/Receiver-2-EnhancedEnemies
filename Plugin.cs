@@ -353,7 +353,7 @@ public class Plugin : BaseUnityPlugin
             new ConfigDescription("Enables security cameras to activate through other security cameras (they still need their own camera though)")
         );
 /////////////////////////////////////////////////////////////////////////////////////////////////
-        GreenDemon.enabled = Config.Bind(
+        GreenDemonMode.enabled = Config.Bind(
             new ConfigDefinition("Green Demon Mode", "Green Demon enabled"),
             false,
             new ConfigDescription("Try to rank up while evading a slow but invincible shock drone that can phase through walls")
@@ -377,7 +377,7 @@ public class Plugin : BaseUnityPlugin
         _harmony.PatchAll(typeof(SleepyDrones));
         _harmony.PatchAll(typeof(SleepySecurityCameras));
         _harmony.PatchAll(typeof(SecurityCameraLinkedEnemies));
-        _harmony.PatchAll(typeof(GreenDemon));
+        _harmony.PatchAll(typeof(GreenDemonMode));
         _harmony.PatchAll(typeof(GrenadeDrones));
         _harmony.PatchAll(typeof(GrenadeDronePayload));
     }

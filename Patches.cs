@@ -2,11 +2,13 @@ using BepInEx.Configuration;
 using HarmonyLib;
 using Receiver2;
 using SimpleJSON;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
 using VLB;
+using static EnhancedEnemies.Patches.DroneMain;
 using static HarmonyLib.AccessTools;
 
 namespace EnhancedEnemies.Patches
@@ -786,25 +788,20 @@ namespace EnhancedEnemies.Patches
     }
 
     [HarmonyPatch]
-    public static class GrenadeDrones   //And so he says to me,
-    {   //You got legs baby, you're everywhere. You're all over the place! Yeah...
-        internal static ConfigEntry<float> chance;
-        internal static ConfigEntry<Color> lightColor;
+    public static class DroneMain
+    {   //This is the setup class for grenade drones and the green demon. I couldn't figure out
+        //how to replicate something like TurretClass at first so my drones would keep getting
+        //re-rolled when re-entering a cell. I found Get- and SetPersistentData in the ShockDrone
+        //code and it works pretty well for my porpoises.
 
-        //This is how we track which drones are grenade drones.
-        //I couldn't figure out how to do this with a HashSet like the existing patches,
-        //for some reason my drones would get re-rolled when just re-entering a cell. I found
-        //GetPersistentData and SetPersistentData in the ShockDrone code and it works pretty well.
-        //Oh I see now that the TurretSeed class is how it's done. Oh well, my way works too.
+        internal static ConfigEntry<float> chance;
+        
         public class Persist : MonoBehaviour {
             public bool isGrenade;
             public bool selfDestruct;   //This one isn't saved to JSON, just used for the fuse
+            public bool isGreenDemon;   //Likewise, this one isn't saved because the game handles it elsewhere
         }
 
-        //Reflection delegates allow us to access our robot's private parts
-        private static FieldRef<LightPart, RobotPart> lightPart = AccessTools.FieldRefAccess<LightPart, RobotPart>("part");
-        private static FieldRef<LightPart, LightPart.LightMode> lightMode = AccessTools.FieldRefAccess<LightPart, LightPart.LightMode>("current_light_mode");
-        private static FieldRef<LightPart, Color> lightCol = AccessTools.FieldRefAccess<LightPart, Color>("light_color");
         //These are for changing behavior, grenade drones are slower but have a larger attack radius
         private static FieldRef<ShockDrone, float> alertSpeed = AccessTools.FieldRefAccess<ShockDrone, float>("alert_speed");
         private static FieldRef<SensorPart, float> sensorRange = AccessTools.FieldRefAccess<SensorPart, float>("range");
@@ -814,52 +811,50 @@ namespace EnhancedEnemies.Patches
         {
             if ((ReceiverCoreScript.Instance().game_mode.GetGameMode() != GameMode.RankingCampaign)
                && !Plugin.EnableClassic.Value)
-               return;
-         
+               return;  //Check if I should run in Classic
 
             var persist = __instance.GetComponent<Persist>();
+            var kds = __instance.GetComponent<KillDroneScript>();
             if (persist == null)
-            {   //Roll the dice to see if I'm a grenade drone...
-                float grenadeChance;
-
+            {   //Decide if drone is regular, grenade, or green demon
                 persist = __instance.gameObject.AddComponent<Persist>();
-                if (Plugin.NeoWeight.Value)
-                {   //New drone weighting system
-                    bool patrolling = __instance.follow_waypoints;
 
-                    if (!patrolling) {grenadeChance = 0.33f;
-                        //Plugin.Logger.LogInfo ("Not patrolling");
-                        }
-                    else {grenadeChance = 0.66f;
-                        //Plugin.Logger.LogInfo ("I'm patrolling");
-                        }
+                if (kds != null && kds.kill_drone_type == ReceiverEntityType.GreenDemon)
+                {   //If I'm the Green Demon, skip the grenade drone roll.
+                    persist.isGrenade = false;
+                    persist.isGreenDemon = true;
                 }
-                else {grenadeChance = chance.Value;}
-                persist.isGrenade = UnityEngine.Random.value < grenadeChance;
+                else
+                {   //Otherwise, roll the dice to see if I'm a grenade drone...
+                    float grenadeChance;
+
+                    if (Plugin.NeoWeight.Value)
+                    {   //New drone weighting system
+                        bool patrolling = __instance.follow_waypoints;
+
+                        if (patrolling) { grenadeChance = 0.66f; }
+                        else { grenadeChance = 0.33f; }
+                    }
+                    else { grenadeChance = chance.Value; }
+                    persist.isGrenade = UnityEngine.Random.value < grenadeChance;
+                }
             }
 
             if (persist.isGrenade)
-            {   //and apply a speed penalty and range boost if so.
-                alertSpeed(__instance) *= 0.7f;
+            {   //Grenade drones get a speed penalty but an attack radius boost.
+                alertSpeed(__instance) *= 0.7f; //70% as fast as a regular shock drone
                 var sensor = __instance.sensor_part;
                 if (sensor != null) sensorRange(sensor) *= 1.5f;
             }
-        }
 
-
-        [HarmonyPostfix, HarmonyPatch(typeof(LightPart), "UpdateLights")]
-        static void Colorize(LightPart __instance) //mod light_color like in the shotgun/lancer code
-        {
-            var robotPart = lightPart(__instance);
-            if (robotPart?.robot is ShockDrone drone && lightMode(__instance) == LightPart.LightMode.Passive)
-            {                                                   //If I'm a ShockDrone in a Passive state...
-                var persist = drone.GetComponent<Persist>();    //check my Persist component...
-                if (persist != null && persist.isGrenade)       //Am I a grenade drone?
-                    lightCol(__instance) = lightColor.Value;    //If so, override my color
+            if (persist.isGreenDemon)
+            {   //The Green Demon gets an even sharper speed penalty.
+                alertSpeed(__instance) *= 0.4f; //40% speed, same ratio as R1 Green Demon
             }
         }
 
         //The special sauce, save the value of isGrenade directly to the drone's JSON
+        //We don't do this for the Green Demon because the game has its own ways of tracking that
         [HarmonyPostfix, HarmonyPatch(typeof(ShockDrone), "GetPersistentData")]
         static void Save(ShockDrone __instance, ref JSONObject __result)
         {
@@ -881,19 +876,33 @@ namespace EnhancedEnemies.Patches
     }
 
     [HarmonyPatch]
-    public static class GrenadeDronePayload
-    {
-        //Track exploded tasers by their instance ID.
-        //Using a HashSet here since the taser itself existing/not existing
-        //persists across room/checkpoint loads.
+    public static class GrenadeDrones   //And so he says to me,
+    {   //You got legs baby, you're everywhere. You're all over the place! Yeah...
+
+        //Reflection delegates allow us to access our robot's private parts
+        private static FieldRef<LightPart, RobotPart> lightPart = AccessTools.FieldRefAccess<LightPart, RobotPart>("part");
+        private static FieldRef<LightPart, LightPart.LightMode> lightMode = AccessTools.FieldRefAccess<LightPart, LightPart.LightMode>("current_light_mode");
+        private static FieldRef<LightPart, Color> lightCol = AccessTools.FieldRefAccess<LightPart, Color>("light_color");
+
         private static HashSet<int> _explodedTasers = new HashSet<int>();
+        internal static ConfigEntry<Color> lightColor;
 
-
+        [HarmonyPostfix, HarmonyPatch(typeof(LightPart), "UpdateLights")]
+        static void Colorize(LightPart __instance)
+        {   //mod light_color like in the shotgun/lancer code
+            var robotPart = lightPart(__instance);
+            if (robotPart?.robot is ShockDrone drone && lightMode(__instance) == LightPart.LightMode.Passive)
+            {                                                   //If I'm a ShockDrone in a Passive state...
+                var persist = drone.GetComponent<Persist>();    //check my Persist component...
+                if (persist != null && persist.isGrenade)       //Am I a grenade drone?
+                    lightCol(__instance) = lightColor.Value;    //If so, override my color
+            }
+        }
         [HarmonyPostfix]    //Grenade drones self-destruct once close enough to the player...
         [HarmonyPatch(typeof(ShockDrone), "AttackingEnter")]
         static void OnSelfDestruct(ShockDrone __instance)
         {
-            var persist = __instance.GetComponent<GrenadeDrones.Persist>();
+            var persist = __instance.GetComponent<DroneMain.Persist>();
             if (persist == null || !persist.isGrenade) return;
 
             var taser = __instance.taser_part;
@@ -912,7 +921,7 @@ namespace EnhancedEnemies.Patches
         [HarmonyPatch(typeof(ShockDrone), "OnPartDestroyed")]
         static void OnTaserDestroyed(ShockDrone __instance, ShootableQuery query, RobotPart part)
         {
-            var persist = __instance.GetComponent<GrenadeDrones.Persist>();
+            var persist = __instance.GetComponent<DroneMain.Persist>();
             if (persist == null || !persist.isGrenade) return;
 
             //Make sure the part shot (RobotPart part) is the taser (__instance.taser_part)
@@ -946,7 +955,7 @@ namespace EnhancedEnemies.Patches
             _explodedTasers.Add(id);
 
             //Did I self-destruct?
-            var persist = drone.GetComponent<GrenadeDrones.Persist>();
+            var persist = drone.GetComponent<DroneMain.Persist>();
             bool selfDestruct = persist != null && persist.selfDestruct;
 
             Vector3 origin = taser.transform.position;
@@ -995,6 +1004,31 @@ namespace EnhancedEnemies.Patches
             }
 
             //Plugin.Logger.LogInfo("Boom, baby, BOOM!");
+        }
+    }
+
+    [HarmonyPatch]
+    public static class GreenDemonMode
+    {   //It's not easy, being green...
+        internal static ConfigEntry<bool> enabled;
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(ReceiverCoreScript), "SpawnPlayer")]
+        static void SpawnPlayerPostfix(Vector3 position)
+        {
+            if (!enabled.Value) return;
+
+            var rcs = ReceiverCoreScript.Instance();
+            if (rcs == null) return;
+
+            //Don't activate in Classic mode (I'll make a separate plugin later for that)
+            if (rcs.game_mode.GetGameMode() != GameMode.RankingCampaign) return;
+
+
+            if (!ModifierManager.HasModifier<Receiver2.Modifiers.GreenDemonModifier>())
+            {
+                ModifierManager.AddModifier(new Receiver2.Modifiers.GreenDemonModifier());
+            }
         }
     }
 
@@ -1171,8 +1205,8 @@ namespace EnhancedEnemies.Patches
             var standbyChance = startAsleepChance.Value;
             if (inheritLevelStartAsleepChance.Value)
             {   //Set the sleep rate to StandbyTurretRate from the worldgen config, or 0 if it doesn't exist.
-                var rtlgInstance = RuntimeTileLevelGenerator.instance; if (rtlgInstance != null){
-                var currentSegment = rtlgInstance.CurrentSegment; if (currentSegment != null){
+                var rtlg = RuntimeTileLevelGenerator.instance; if (rtlg != null){
+                var currentSegment = rtlg.CurrentSegment; if (currentSegment != null){
 
                 if (currentSegment.float_properties.TryGetValue(FloatProperties.StandbyTurretRate, out var StandbyTurretRate))
                 { standbyChance = StandbyTurretRate.value; } } }
@@ -1820,36 +1854,6 @@ namespace EnhancedEnemies.Patches
             {
                 return true;
             }
-        }
-    }
-    [HarmonyPatch]
-    public static class GreenDemon
-    {
-        internal static ConfigEntry<bool> enabled;
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(ReceiverCoreScript), "SpawnPlayer")]
-        static void SpawnPlayerPostfix(Vector3 position)
-        {
-            if (!enabled.Value) return;
-
-            ReceiverCoreScript rcsInstance = ReceiverCoreScript.Instance();
-            if (rcsInstance == null) return;
-            if (rcsInstance.game_mode.GetGameMode() != GameMode.RankingCampaign) return;
-            //Disabling this altogether outside of RankingCampaign.
-            //I plan to create a separate patch later to enable this in Classic.
-
-            rcsInstance.StartCoroutine(SpawnDemonAfterDelay(position));
-        }
-
-        private static System.Collections.IEnumerator SpawnDemonAfterDelay(Vector3 spawnPos)
-        {   //I couldn't figure out how to load the actual Green Demon modifier...
-            yield return new WaitForSeconds(5f);
-
-            RuntimeTileLevelGenerator rtlgInstance = RuntimeTileLevelGenerator.instance;
-            if (rtlgInstance == null) yield break;
-            //so I cheat and just spawn the enemy itself after a delay.
-            rtlgInstance.CreateGreenDemon(spawnPos);
         }
     }
 }
