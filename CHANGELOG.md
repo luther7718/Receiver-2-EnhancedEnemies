@@ -1,3 +1,8 @@
+### 1.2.1
+- Added new weighting system that rolls enhanced enemies based on standard enemy subtypes (cutout/armored/etc.)
+- Likewise, set up Sleepy Drones and Sleepy Cameras to inherit level's StandbyTurretRate by default
+- Grenade Drones and Green Demon now fly slower than standard shock drones
+
 ### 1.2.0
 - Green Demon
 - Grenade Drones

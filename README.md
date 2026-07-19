@@ -9,11 +9,11 @@ Receiver, we have received transmissions that the Threat has been modifying the 
 
  - **Lancer turrets**, that can penetrate any barrier and will sweep through cover (with bullets) after losing line of sight, with green camera lights
  - **Shotgun turrets**, that shoot multiple pellets per shot, with red camera lights
+ - **Grenade drones**, that can self-destruct, or be detonated remotely by shooting out their taser (possibly destroying other enemies in the process), with red camera lights
+ - **Green Demon**, a slow but invincible drone that can phase through walls
  - **Sleeping killdrones**, that start with their camera off; behavior previously exhibited by only some grounded turrets now extend to ceiling turrets, drones, and security cameras
  - **Sleepy killdrones**; sleeping turrets, drones, and security cameras that go back to sleep after being awoken, with black camera armor and sensors
  - **Security camera linked killdrones**; turrets and drones with destroyed cameras will still attack if a security camera can see you. Security cameras also alert if another security camera spots you
- - **Grenade drones**, that can self-destruct, or be detonated remotely by shooting out their taser (possibly destroying other enemies in the process), with red camera lights
- - **Green Demon**, a slow but invincible drone that can phase through walls
 
 ## Configuration
 Some Receivers have also reported that they are able to exert some control over these new behaviors using the "**BepInEx Configuration File**" Mindtech. Reported changes include the following:
